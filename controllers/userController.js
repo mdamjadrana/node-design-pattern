@@ -4,29 +4,45 @@ import {saveUser, getUsers, updateUser, deleteUser} from '../services/userServic
 const router = express.Router();
 
 const getHandler = async (req, res) => {
-    const allUsers = await getUsers();
-    res.send(JSON.stringify(allUsers));
+    try {
+        const allUsers = await getUsers();
+        res.send(JSON.stringify(allUsers));
+    } catch (error) {
+        next(error, req, res)
+    }
 };
 
-const postHandler = async (req, res) => {
-    const result  = await saveUser(req.body)
-    res.send(`user created successfully ID: ${result}`);
-}
-
-const updateUserHandler = async (req, res) => {
-    const body = req.body;
-    const user = {
-        id: req.params.id,
-        username: body.username
+const postHandler = async (req, res, next) => {
+    try {
+        const result  = await saveUser(req.body)
+        res.send(`user created successfully ID: ${result._id}`);
+    } catch (error) {  
+        next(error, req, res)
     }
-    const result = await updateUser(user);
-    res.send(result)
 }
 
-const deleteHandler =  async (req, res) => {
-    const id = req.params.id
-    const result = await deleteUser(id);
-    res.send(`user deleted ${result}`)
+const updateUserHandler = async (req, res, next) => {
+    try {
+        const body = req.body;
+        const user = {
+            id: req.params.id,
+            username: body.username
+        }
+        const result = await updateUser(user);
+        res.send(result)
+    } catch (error) {
+        return next(error, req, res)
+    }
+}
+
+const deleteHandler =  async (req, res, next) => {
+    try {
+        const id = req.params.id
+        await deleteUser(id);
+        res.status(200).send(`user deleted`)
+    } catch (error) {
+        return next(error, req, res)
+    }
 }
 
 router.get('/', getHandler);
