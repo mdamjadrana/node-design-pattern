@@ -1,5 +1,7 @@
 import express from 'express'
 import {saveUser, getUsers, updateUser, deleteUser} from '../services/userService'
+import handleValidation from '../middlewars/handleValidations'
+import validators from '../models/view-models'
 
 const router = express.Router();
 
@@ -14,6 +16,7 @@ const getHandler = async (req, res) => {
 
 const postHandler = async (req, res, next) => {
     try {
+        console.log('body', req.body);
         const result  = await saveUser(req.body)
         res.send(`user created successfully ID: ${result._id}`);
     } catch (error) {  
@@ -46,7 +49,7 @@ const deleteHandler =  async (req, res, next) => {
 }
 
 router.get('/', getHandler);
-router.post('/', postHandler);
+router.post('/', handleValidation(validators.userSchemaValidator), postHandler);
 router.post('/:id', updateUserHandler)
 router.delete('/:id', deleteHandler)
 
