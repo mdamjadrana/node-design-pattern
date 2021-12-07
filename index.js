@@ -1,5 +1,5 @@
 import express from 'express'
-import dbConnection from './mongo'
+import {dbConnection, uri} from './mongo'
 import configureController from './controllers'
 import { handelErrors } from './middlewars/handleErrors';
 import winston from 'winston';
@@ -28,8 +28,21 @@ app.use(processRequest);
 
 const fileInfoTransports = new(winston.transports.DailyRotateFile)(
     {
-        filename: 'log-info-%DATE%-log',
+        filename: 'logs/info/log-info-%DATE%-log',
         datePattern: 'yyyy-MM-DD-HH'
+    }
+)
+const fileErrorTransports = new(winston.transports.DailyRotateFile)(
+    {
+        filename: 'logs/errors/log-error-%DATE%-log',
+        datePattern: 'yyyy-MM-DD-HH'
+    }
+)
+
+const mongoErrorTransports = new (winston.transports.MongoDB)(
+    {
+        db: uri,
+        metaKey: 'meta'
     }
 )
 
@@ -41,7 +54,7 @@ const getMessage = (req, res) => {
     return JSON.stringify(data);
 }
 
-const winstonInit = expressWinston.logger({
+const winstonInfo = expressWinston.logger({
     transports: [
         new winston.transports.Console(),
         fileInfoTransports
@@ -51,11 +64,20 @@ const winstonInit = expressWinston.logger({
     msg: getMessage
 });
 
-app.use(winstonInit);
+const winstonError = expressWinston.errorLogger({
+    transports: [
+        new winston.transports.Console(),
+        fileErrorTransports,
+        mongoErrorTransports
+    ]
+})
+app.use(winstonInfo);
 
 dbConnection();
 
 configureController(app);
+
+app.use(winstonError);
 
 app.use(handelErrors)
 
